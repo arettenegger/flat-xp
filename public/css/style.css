@@ -324,10 +324,9 @@ img.alignright { float: right; margin: 4px 0 18px 28px; }
 .contact-head .eyebrow { font: 600 12px var(--head); letter-spacing: .22em; text-transform: uppercase; color: var(--green); margin: 0 0 10px; }
 .contact-head .page-title { padding: 0; margin: 0 0 18px; }
 .contact-head .lead { font-size: 19px; line-height: 1.65; color: var(--muted); margin: 0; }
-.contact-photo { margin: 0 0 -56px; position: relative; z-index: 0; border-radius: var(--radius) var(--radius) 0 0; overflow: hidden; }
+.contact-photo { margin: 0 0 36px; position: relative; border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); }
 .contact-photo img { display: block; width: 100%; height: auto; }
-.contact-photo::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(14, 19, 14, 0) 45%, rgba(14, 19, 14, .35)); }
-.contact { position: relative; z-index: 1; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.55fr); gap: 28px; padding: 0 28px; }
+.contact { position: relative; z-index: 1; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.55fr); gap: 28px; }
 .contact-info {
   background: var(--night); color: rgba(255, 255, 255, .78); border-radius: var(--radius); padding: 34px 32px; align-self: start;
   box-shadow: var(--shadow-lg); position: relative; overflow: hidden;
@@ -467,8 +466,7 @@ img.alignright { float: right; margin: 4px 0 18px 28px; }
   .tl-item.left, .tl-item.right { grid-column: 1; margin-bottom: 18px; }
   .tl-item.left::after, .tl-item.right::after { left: -29px; right: auto; }
   .tl-month { text-align: left; margin-left: -34px; }
-  .contact { grid-template-columns: 1fr; padding: 0 16px; }
-  .contact-photo { margin-bottom: -32px; }
+  .contact { grid-template-columns: 1fr; }
   .footer-grid { grid-template-columns: 1fr 1fr; }
   .footer-brand { grid-column: 1 / -1; }
 }
@@ -487,7 +485,6 @@ img.alignright { float: right; margin: 4px 0 18px 28px; }
   .intro-words p { white-space: normal; text-align: center; }
   .contact-info, .contact-form { padding: 26px 22px; }
   .contact-page { padding-top: 44px; }
-  .contact { padding: 0; }
   .contact-photo { margin: 0 -18px 24px; border-radius: 0; }
   .form-grid { grid-template-columns: 1fr; }
   .contact-head .lead { font-size: 17px; }
