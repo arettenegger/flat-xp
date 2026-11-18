@@ -31,6 +31,10 @@ window.XP_FB = {
     return auth.currentUser.getIdToken();
   },
   user() { return auth && auth.currentUser; },
+  /** Adresse eines schon vorhandenen Bildes, sonst null */
+  async existing(path) {
+    try { return await getDownloadURL(ref(storage, path)); } catch (e) { return null; }
+  },
   /** Bild hochladen, liefert die öffentliche Adresse */
   async upload(path, blob) {
     const r = ref(storage, path);

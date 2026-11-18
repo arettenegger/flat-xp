@@ -792,6 +792,70 @@
     };
   }
 
+  /* ---------- Bilder-Umzug nach Firebase Storage ---------- */
+  const UPLOAD_RE = /\/uploads\/[^"'\s)<>]+?\.(?:jpe?g|png|gif)/gi;
+  function localImages() {
+    const set = new Set();
+    for (const x of [...S.pages, ...S.posts]) {
+      const t = (x.data.html || '') + ' ' + (x.data.image || '');
+      for (const m of t.matchAll(UPLOAD_RE)) set.add(m[0]);
+    }
+    return [...set];
+  }
+
+  /** Bild laden, auf max. 1600 px verkleinern und als WebP kodieren (falls kleiner) */
+  async function toWebp(blob) {
+    try {
+      const bmp = await createImageBitmap(blob, { imageOrientation: 'from-image' });
+      const k = Math.min(1, 1600 / Math.max(bmp.width, bmp.height));
+      const c = document.createElement('canvas');
+      c.width = Math.round(bmp.width * k); c.height = Math.round(bmp.height * k);
+      const g = c.getContext('2d'); g.imageSmoothingQuality = 'high';
+      g.drawImage(bmp, 0, 0, c.width, c.height);
+      const out = await new Promise(r => c.toBlob(r, 'image/webp', 0.8));
+      if (out && out.type === 'image/webp' && out.size < blob.size) return out;
+    } catch (e) { /* dann Original */ }
+    return null;
+  }
+
+  async function migrateImages(log, bar) {
+    const list = localImages();
+    const map = new Map();
+    const failed = [];
+    let done = 0;
+    await pool(list, 4, async web => {
+      const rel = decodeURIComponent(web).replace(/^\//, '');
+      try {
+        const r = await fetch(web);
+        if (!r.ok) { failed.push(web + ' (fehlt)'); return; }
+        const orig = await r.blob();
+        const webp = await toWebp(orig);
+        const path = webp ? rel.replace(/\.[^.]+$/, '.webp') : rel;
+        const url = (await window.XP_FB.existing(path)) || await window.XP_FB.upload(path, webp || orig);
+        map.set(web, url);
+        try { const d = decodeURIComponent(web); if (d !== web) map.set(d, url); } catch (e) { /* egal */ }
+        const enc = web.split('/').map(p => encodeURIComponent(decodeURIComponent(p))).join('/');
+        if (enc !== web) map.set(enc, url);
+      } catch (e) { failed.push(web + ' (' + e.message + ')'); }
+      done++;
+      bar.style.width = (done / list.length * 100) + '%';
+      log(`Bilder: ${done} / ${list.length} …`);
+    });
+    // Inhalte umschreiben (längste Pfade zuerst, damit nichts halb ersetzt wird)
+    const keys = [...map.keys()].sort((a, b) => b.length - a.length);
+    const swap = t => { let o = t; for (const k of keys) if (o.includes(k)) o = o.split(k).join(map.get(k)); return o; };
+    const changes = [];
+    for (const x of [...S.pages, ...S.posts]) {
+      const html = swap(x.data.html || '');
+      const image = x.data.image ? swap(x.data.image) : x.data.image;
+      if (html !== x.data.html || image !== x.data.image) {
+        x.next = { ...x.data, html, image };
+        changes.push(x);
+      }
+    }
+    return { list, map, failed, changes };
+  }
+
   /* ---------- SEO ---------- */
   const seoItems = () => [
     ...S.pages.map(x => ({ kind: 'page', ...x.data })),
@@ -866,12 +930,47 @@
         <p class="hint">Welche Seiten unter „Galerien“ gezeigt werden, in dieser Reihenfolge.</p>
         <div id="gals"></div>
         <div class="menu-row"><select id="gNew"><option value="">Seite hinzufügen …</option>${S.pages.map(p => `<option value="${esc(p.data.slug)}">${esc(p.data.title)}</option>`).join('')}</select></div>
+      </div>
+      <div class="card" id="migCard">
+        <h2 style="margin-top:0">Bilder nach Firebase Storage umziehen</h2>
+        <p class="hint">Lädt alle Bilder aus News und Seiten (verkleinert, als WebP) in den Bucket und stellt die Inhalte auf die neuen Adressen um – in einem einzigen Speichervorgang.
+          Logo, Kopfbild und Hintergründe bleiben auf der Website. Bereits umgezogene Bilder werden übersprungen, der Vorgang kann also jederzeit wiederholt werden.</p>
+        <p id="migInfo"></p>
+        <button class="btn" id="migGo">☁️ Umzug starten</button>
+        <div class="mig-bar" hidden><i id="migBar"></i></div>
+        <p class="hint" id="migLog"></p>
       </div>`;
 
     $$('[data-k]').forEach(i => i.addEventListener('input', () => {
       site[i.dataset.k] = i.type === 'number' ? Math.max(1, parseInt(i.value, 10) || 6) : i.value;
       S.dirty = true;
     }));
+
+    const migLeft = localImages().length;
+    $('#migInfo').innerHTML = migLeft ? `<b>${migLeft}</b> Bilder liegen noch auf der Website.` : '✅ Alle Bilder aus News und Seiten liegen in Firebase Storage.';
+    if (!migLeft) $('#migGo').hidden = true;
+    $('#migGo').onclick = async () => {
+      if (S.dirty && !confirm('Es gibt ungespeicherte Änderungen in den Einstellungen. Trotzdem fortfahren?')) return;
+      if (!confirm(`${migLeft} Bilder werden nach Firebase Storage hochgeladen und alle Seiten und News umgestellt. Das dauert einige Minuten – das Fenster bitte offen lassen. Starten?`)) return;
+      const btn = $('#migGo'); btn.disabled = true;
+      const log = t => { $('#migLog').textContent = t; };
+      $('.mig-bar').hidden = false;
+      S.dirty = true; // Warnung beim Schließen des Fensters
+      try {
+        const r = await migrateImages(log, $('#migBar'));
+        if (!r.changes.length) { log('Keine Inhalte zu ändern.'); return; }
+        log(`Speichere ${r.changes.length} Seiten/News …`);
+        await commit(r.changes.map(x => jsonFile(x.path, x.next)), `Bilder nach Firebase Storage umgezogen (${r.map.size} Adressen)`);
+        r.changes.forEach(x => { x.data = x.next; delete x.next; });
+        S.dirty = false;
+        log(`✅ Fertig: ${r.list.length - r.failed.length} Bilder umgezogen, ${r.changes.length} Seiten/News umgestellt.` + (r.failed.length ? ` Nicht möglich (${r.failed.length}): ${r.failed.slice(0, 8).join(', ')}${r.failed.length > 8 ? ' …' : ''}` : ''));
+        toast('Bilder-Umzug gespeichert ✔ – in wenigen Minuten online.');
+        $('#migInfo').textContent = '';
+      } catch (e) {
+        S.dirty = false;
+        log('❌ Abgebrochen: ' + e.message + ' – einfach erneut starten, bereits hochgeladene Bilder werden übersprungen.');
+      } finally { btn.disabled = false; }
+    };
 
     const move = (arr, i, d) => { const j = i + d; if (j < 0 || j >= arr.length) return; [arr[i], arr[j]] = [arr[j], arr[i]]; S.dirty = true; };
     const ops = (i) => `<div class="ops"><button class="btn small" data-up="${i}" title="nach oben">↑</button><button class="btn small" data-down="${i}" title="nach unten">↓</button><button class="btn small danger" data-rm="${i}" title="entfernen">✕</button></div>`;

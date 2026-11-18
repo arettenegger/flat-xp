@@ -175,3 +175,6 @@ label.check input { width: auto; margin: 0; }
   .seo-stats { grid-template-columns: repeat(2, 1fr); }
   .seo-filter { flex-wrap: wrap; }
 }
+
+.mig-bar { height: 8px; background: #eceeec; border-radius: 4px; overflow: hidden; margin: 12px 0 6px; }
+.mig-bar i { display: block; height: 100%; width: 0; background: var(--green); transition: width .2s; }
