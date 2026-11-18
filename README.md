@@ -126,18 +126,20 @@ Den Text in `content/pages/<seite>.json` (Feld `html`) bearbeiten. Das Menü ste
 **1. SSH-Schlüssel auf SiteGround anlegen**
 Site Tools → *Entwickler* → *SSH-Schlüssel-Manager* → Schlüssel erzeugen und den **öffentlichen** Schlüssel kopieren.
 
-**2. Schlüssel bei GitHub hinterlegen** (nur nötig, wenn das Repo privat ist)
-GitHub-Repo → *Settings* → *Deploy keys* → *Add deploy key* → öffentlichen Schlüssel einfügen, **ohne** Schreibrecht.
+**2. Schlüssel bei GitHub hinterlegen** – entfällt, solange das Repo öffentlich ist
+(es enthält keine Zugangsdaten). Wird es privat: GitHub-Repo → *Settings* → *Deploy keys* →
+*Add deploy key* → öffentlichen Schlüssel einfügen, **ohne** Schreibrecht, und unten `git@github.com:` statt `https://` verwenden.
 
 **3. Per SSH auf SiteGround verbinden** (Port 18765) und die Seite holen:
 
 ```bash
 cd ~/www/flat-xp.at
 mv public_html public_html_wordpress_alt        # alte WordPress-Seite als Sicherung behalten
-git clone --branch deploy --single-branch git@github.com:<BENUTZER>/flat-xp.at.git public_html
+git clone --branch deploy --single-branch https://github.com/arettenegger/flat-xp.git public_html
 ```
 
-Die Seite ist sofort online.
+Die Seite ist sofort online. Vor der Domain-Umstellung lässt sie sich über die
+SiteGround-Testadresse prüfen (die Weiterleitung auf https://flat-xp.at greift nur auf der echten Domain).
 
 **4. Automatisch aktualisieren** – einen der beiden Wege wählen:
 

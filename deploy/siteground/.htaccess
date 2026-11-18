@@ -7,9 +7,12 @@ ErrorDocument 404 /404.html
 <IfModule mod_rewrite.c>
   RewriteEngine On
 
-  # immer HTTPS und ohne www
-  RewriteCond %{HTTPS} !=on [OR]
-  RewriteCond %{HTTP_HOST} ^www\. [NC]
+  # immer HTTPS und ohne www – nur auf der echten Domain,
+  # damit die Seite vorher auf der SiteGround-Testadresse geprüft werden kann
+  RewriteCond %{HTTP_HOST} ^www\.flat-xp\.at$ [NC]
+  RewriteRule ^(.*)$ https://flat-xp.at/$1 [R=301,L]
+  RewriteCond %{HTTP_HOST} ^flat-xp\.at$ [NC]
+  RewriteCond %{HTTPS} !=on
   RewriteRule ^(.*)$ https://flat-xp.at/$1 [R=301,L]
 
   # alte WordPress-Adressen weiterleiten (SEO, alte Links)
