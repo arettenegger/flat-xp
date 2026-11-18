@@ -119,7 +119,20 @@ Den Text in `content/pages/<seite>.json` (Feld `html`) bearbeiten. Das Menü ste
 3. Unter **Actions** startet „Build & Deploy“ automatisch. Danach gibt es den Branch **`deploy`**
    mit der fertigen Website.
 
-## Einrichtung SiteGround (holt sich die Seite von GitHub)
+## Betrieb auf SiteGround (aktuell: Node.js-Projekt)
+
+SiteGround → *Node.js* → Bereitstellung über **GitHub**, Branch **main**, automatische Bereitstellung aktiv.
+Framework *Express*, Node 22, Build-Befehl `npm run build`, Start `npm start` (`server.js`).
+Der Server liefert die fertige Seite aus `dist/` aus (mit WebP), das Kontaktformular sendet an
+`/kontakt/senden/` und verschickt per SMTP. Umgebungsvariablen in SiteGround:
+`SMTP_HOST`, `SMTP_PORT` (465), `SMTP_USER`, `SMTP_PASS`, `MAIL_TO` (info@flat-xp.at).
+Ohne SMTP-Werte werden Anfragen nur ins Server-Protokoll geschrieben.
+
+## Alternative: statisch auf SiteGround (ohne Node.js)
+
+Nur falls das Node.js-Projekt einmal nicht genutzt werden soll. Dann zusätzlich
+`deploy/siteground/kontakt.php` nach `dist/` kopieren und im Formular (`views/kontakt.ejs`)
+`action="/kontakt.php"` setzen.
 
 > Funktioniert mit jedem SiteGround-Tarif (StartUp, GrowBig, GoGeek, Cloud). Node.js wird dort nicht gebraucht.
 

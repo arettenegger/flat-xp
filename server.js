@@ -69,7 +69,8 @@ function lookup(url) {
   return table.get(url);
 }
 
-app.post('/kontakt.php', async (req, res) => {
+// Formular-Ziel ist bewusst keine Datei, sonst beantwortet SiteGrounds nginx die Anfrage selbst
+app.post(['/kontakt/senden/', '/kontakt/senden', '/kontakt.php'], async (req, res) => {
   const b = req.body || {};
   if (b.website) return res.redirect(303, '/kontakt/danke/');
   if (!b.name || !b.nachricht || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(b.email || '') || !b.dsgvo) {
@@ -101,13 +102,19 @@ app.get(/.*/, (req, res) => {
   if (STATIC) {
     // dist/ hat jede Seite als Ordner/index.html; was hier ankommt, gibt es nicht
     if (!req.path.endsWith('/') && !/\.\w+$/.test(req.path)) return res.redirect(301, req.path + '/');
-    return res.status(404).sendFile(path.join(DIST, '404.html'));
+    return res.status(404).sendFile('404.html', { root: DIST }); // root nötig: SiteGround-Pfad enthält .nodeapp
   }
   let url = decodeURIComponent(req.path);
   if (!url.endsWith('/') && !/\.\w+$/.test(url)) return res.redirect(301, url + '/');
   const r = lookup(url);
   if (r) return res.type('html').send(r.render());
   res.status(404).type('html').send(lookup('/404.html').render());
+});
+
+// Fehler nie mit technischen Details anzeigen
+app.use((err, req, res, next) => {
+  console.error(err);
+  res.status(err.status || 500).type('text').send(err.status === 404 ? 'Seite nicht gefunden.' : 'Es ist ein Fehler aufgetreten.');
 });
 
 app.listen(PORT, () => console.log(`Flat-XP läuft auf http://localhost:${PORT}` + (STATIC ? ' (fertige Seite aus dist/)' : DEV ? ' (Entwicklung)' : ' (live gerendert)')));

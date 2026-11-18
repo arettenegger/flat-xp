@@ -8,7 +8,7 @@
       <p>Mobil: <a href="tel:<%= site.phoneLink %>"><%= site.phone %></a><br>
          E-Mail: <a href="mailto:<%= site.email %>"><%= site.email %></a></p>
     </div>
-    <form class="contact-form" method="post" action="/kontakt.php">
+    <form class="contact-form" method="post" action="/kontakt/senden/">
       <label>Name *<input name="name" required maxlength="100" autocomplete="name"></label>
       <label>E-Mail *<input name="email" type="email" required maxlength="150" autocomplete="email"></label>
       <label>Telefon<input name="telefon" maxlength="50" autocomplete="tel"></label>

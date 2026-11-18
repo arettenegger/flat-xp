@@ -38,8 +38,8 @@ fs.writeFileSync(path.join(DIST, 'sitemap.xml'),
   urls.map(r => `  <url><loc>${site.url}${r.url}</loc>${lastmod(r)}</url>`).join('\n') + '\n</urlset>\n');
 fs.writeFileSync(path.join(DIST, 'robots.txt'), `User-agent: *\nAllow: /\nDisallow: /admin/\n\nSitemap: ${site.url}/sitemap.xml\n`);
 
-// 4) Server-Dateien für SiteGround (Apache/PHP)
-fs.cpSync(path.join(ROOT, 'deploy', 'siteground'), DIST, { recursive: true });
+// 4) .htaccess für reines Apache-Hosting (kontakt.php nur bei Bedarf, siehe README)
+fs.copyFileSync(path.join(ROOT, 'deploy', 'siteground', '.htaccess'), path.join(DIST, '.htaccess'));
 
 console.log(`Fertig: ${seen.size} Seiten nach dist/ geschrieben.`);
 
