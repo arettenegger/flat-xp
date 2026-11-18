@@ -77,20 +77,28 @@ app.post(['/kontakt/senden/', '/kontakt/senden', '/kontakt.php'], async (req, re
     return res.status(400).send('Bitte Name, gültige E-Mail, Nachricht und Zustimmung angeben.');
   }
   const text = `Name: ${b.name}\nE-Mail: ${b.email}\nTelefon: ${b.telefon || ''}\nBetreff: ${b.betreff || ''}\n\n${b.nachricht}`;
-  if (!process.env.SMTP_HOST) {
-    console.log('--- Kontaktanfrage (kein SMTP konfiguriert) ---\n' + text);
+  // Versand: SMTP, falls in SiteGround hinterlegt – sonst über das Mailsystem des Servers (sendmail)
+  const TO = process.env.MAIL_TO || 'info@flat-xp.at';
+  const FROM = process.env.MAIL_FROM || process.env.SMTP_USER || 'info@flat-xp.at';
+  const SENDMAIL = ['/usr/sbin/sendmail', '/usr/bin/sendmail'].find(f => fs.existsSync(f));
+  if (!process.env.SMTP_HOST && !SENDMAIL) {
+    console.log('--- Kontaktanfrage (kein Mailversand möglich) ---\n' + text);
     return res.redirect(303, '/kontakt/danke/');
   }
   try {
     const nodemailer = require('nodemailer');
-    const t = nodemailer.createTransport({
-      host: process.env.SMTP_HOST, port: +(process.env.SMTP_PORT || 465), secure: +(process.env.SMTP_PORT || 465) === 465,
-      auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
-    });
+    const t = process.env.SMTP_HOST
+      ? nodemailer.createTransport({
+        host: process.env.SMTP_HOST, port: +(process.env.SMTP_PORT || 465), secure: +(process.env.SMTP_PORT || 465) === 465,
+        auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
+      })
+      : nodemailer.createTransport({ sendmail: true, path: SENDMAIL, newline: 'unix' });
     await t.sendMail({
-      from: `Flat-XP Website <${process.env.SMTP_USER}>`, to: process.env.MAIL_TO || 'info@flat-xp.at',
-      replyTo: b.email, subject: 'Anfrage über flat-xp.at' + (b.betreff ? ': ' + b.betreff : ''), text,
+      from: `Flat-XP Website <${FROM}>`, to: TO,
+      replyTo: { name: String(b.name).replace(/[<>"\r\n]/g, ''), address: b.email },
+      subject: 'Anfrage über flat-xp.at' + (b.betreff ? ': ' + String(b.betreff).replace(/[\r\n]/g, ' ') : ''), text,
     });
+    console.log('Kontaktanfrage gesendet an ' + TO + ' (' + (process.env.SMTP_HOST ? 'SMTP' : 'sendmail') + ')');
     res.redirect(303, '/kontakt/danke/');
   } catch (e) {
     console.error(e);
