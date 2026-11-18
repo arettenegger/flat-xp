@@ -10,7 +10,7 @@
 <% } %>  <meta property="og:title" content="<%= title %>">
   <meta property="og:site_name" content="Flat-XP">
   <meta property="og:locale" content="de_AT">
-  <link rel="preload" href="/fonts/montserrat-latin-700-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/fonts/dm-serif-display-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="/fonts/pt-sans-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="/css/style.css">
 </head>
@@ -53,14 +53,36 @@
   </main>
 
   <footer class="site-footer">
-    <div class="footer-top">
-      <p>@ Copyright FLAT-XP <%= site.owner %> ● <%= site.address %> ● Mobil: <a href="tel:<%= site.phoneLink %>"><%= site.phone %></a> ● Email: <a href="mailto:<%= site.email %>"><%= site.email %></a></p>
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <img src="/uploads/2018/06/logo-with-label-star.png" alt="Flat-XP Dual Purpose" width="390" height="147" loading="lazy">
+        <p>Dual Purpose Flat Coated Retriever aus Admont – mit Herz, Verstand und ÖKV-Gütesiegel.</p>
+      </div>
+      <div>
+        <h4>KONTAKT</h4>
+        <ul>
+          <li>FLAT-XP <%= site.owner %></li>
+          <li><%= site.address %></li>
+          <li><a href="tel:<%= site.phoneLink %>"><%= site.phone %></a></li>
+          <li><a href="mailto:<%= site.email %>"><%= site.email %></a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>ENTDECKEN</h4>
+        <ul>
+          <li><a href="/die-huendinnen/">Hündinnen</a></li>
+          <li><a href="/deckruden/">Deckrüde</a></li>
+          <li><a href="/galerien/">Galerien</a></li>
+          <li><a href="/blog/">News</a></li>
+          <li><a href="/kontakt/">Kontakt</a></li>
+        </ul>
+      </div>
     </div>
     <div class="footer-bottom">
-      <p>© <%= site.since %>–<%= year %> Dual Purpose | Alle Rechte vorbehalten | <a href="/impressum/">Impressum</a> | <a href="/datenschutz/">Datenschutz</a></p>
+      <p>© <%= site.since %>–<%= year %> Flat-XP · Dual Purpose · Alle Rechte vorbehalten · <a href="/impressum/">Impressum</a> · <a href="/datenschutz/">Datenschutz</a></p>
     </div>
   </footer>
-  <a href="#" class="to-top" aria-label="Nach oben">&#8963;</a>
+  <a href="#" class="to-top" aria-label="Nach oben">&#8593;</a>
   <script src="/js/main.js" defer></script>
 </body>
 </html>

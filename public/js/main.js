@@ -28,6 +28,25 @@
   var top = document.querySelector('.to-top');
   if (top) top.addEventListener('click', function (e) { e.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }); });
 
+  /* ---- Einblenden beim Scrollen ---- */
+  if ('IntersectionObserver' in window && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    var targets = document.querySelectorAll('.fx-col, .tl-item, .post-card, .gallery-card, .fx-gallery figure');
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (en) {
+        if (!en.isIntersecting) return;
+        en.target.classList.add('in');
+        io.unobserve(en.target);
+      });
+    }, { rootMargin: '0px 0px -8% 0px' });
+    targets.forEach(function (el, i) {
+      var r = el.getBoundingClientRect();
+      if (r.top < window.innerHeight) return; // schon sichtbar → nicht verstecken
+      el.classList.add('reveal');
+      el.style.transitionDelay = (i % 4) * 70 + 'ms';
+      io.observe(el);
+    });
+  }
+
   /* ---- Slider ---- */
   document.querySelectorAll('.fx-slider').forEach(function (slider) {
     var slides = slider.querySelectorAll('.fx-slide');
