@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Flat-XP Verwaltung</title>
+  <link rel="stylesheet" href="/admin/admin.css">
+</head>
+<body>
+  <!-- Anmeldung -->
+  <section id="login" class="login" hidden>
+    <form class="login-box" id="loginForm">
+      <img src="/uploads/2018/06/logo-with-label-star.png" alt="Flat-XP" width="260">
+      <h1>Verwaltung</h1>
+      <p>Bitte mit E-Mail und Passwort anmelden.</p>
+      <label>E-Mail
+        <input type="email" id="email" autocomplete="username" required>
+      </label>
+      <label>Passwort
+        <input type="password" id="password" autocomplete="current-password" required>
+      </label>
+      <label class="check"><input type="checkbox" id="remember"> Auf diesem Gerät angemeldet bleiben</label>
+      <button class="btn primary" type="submit">Anmelden</button>
+      <p class="err" id="loginErr"></p>
+      <button type="button" class="link" id="forgot">Passwort vergessen?</button>
+    </form>
+  </section>
+
+  <!-- Hauptansicht -->
+  <div id="app" class="app" hidden>
+    <aside class="side">
+      <div class="brand"><img src="/uploads/2018/06/logo-with-label-star.png" alt="Flat-XP"></div>
+      <nav>
+        <a href="#news" data-view="news">📰 News</a>
+        <a href="#seiten" data-view="seiten">📄 Seiten</a>
+        <a href="#seo" data-view="seo">🔍 SEO</a>
+        <a href="#einstellungen" data-view="einstellungen">⚙️ Einstellungen</a>
+      </nav>
+      <div class="side-foot">
+        <div id="deployStatus" class="deploy"></div>
+        <a href="/home/" target="_blank" rel="noopener">Website ansehen ↗</a>
+        <button class="link" id="logout">Abmelden</button>
+      </div>
+    </aside>
+    <main class="main" id="view"></main>
+  </div>
+
+  <div id="loading" class="loading"><div class="spinner"></div><p id="loadingText">Lade …</p></div>
+  <div id="toast" class="toast" hidden></div>
+
+  <script type="module" src="/admin/firebase.js"></script>
+  <script src="/admin/seo.js" defer></script>
+  <script src="/admin/admin.js" defer></script>
+</body>
+</html>
