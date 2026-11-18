@@ -34,7 +34,7 @@ const urls = [...seen].filter(u => !u.endsWith('.html') && !u.includes('/danke/'
 fs.writeFileSync(path.join(DIST, 'sitemap.xml'),
   '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n' +
   urls.map(u => `  <url><loc>${site.url}${u}</loc></url>`).join('\n') + '\n</urlset>\n');
-fs.writeFileSync(path.join(DIST, 'robots.txt'), `User-agent: *\nAllow: /\n\nSitemap: ${site.url}/sitemap.xml\n`);
+fs.writeFileSync(path.join(DIST, 'robots.txt'), `User-agent: *\nAllow: /\nDisallow: /admin/\n\nSitemap: ${site.url}/sitemap.xml\n`);
 
 // 4) Server-Dateien für SiteGround (Apache/PHP)
 fs.cpSync(path.join(ROOT, 'deploy', 'siteground'), DIST, { recursive: true });

@@ -14,12 +14,29 @@ const DEV = process.env.NODE_ENV !== 'production';
 const app = express();
 
 app.disable('x-powered-by');
+// Verwaltung (/admin/) – arbeitet direkt mit der GitHub-API
+app.get('/admin', (req, res, next) => (req.originalUrl === '/admin' ? res.redirect(301, '/admin/') : next()));
+app.use('/admin', express.static(path.join(__dirname, 'public', 'admin'), { index: 'index.html' }));
 app.use(express.static(path.join(__dirname, 'public'), { maxAge: DEV ? 0 : '30d', index: false }));
 app.use(express.urlencoded({ extended: false, limit: '20kb' }));
 
 // Alte WordPress-Pfade
 app.get(/^\/wp-content\/uploads\/(.*)$/, (req, res) => res.redirect(301, '/uploads/' + req.params[0]));
 app.get(/^\/Purpose\/(.*)$/i, (req, res) => res.redirect(301, '/' + req.params[0]));
+
+// Nur lokal: Inhalte als Liste, damit die Verwaltung ohne GitHub getestet werden kann
+if (DEV) {
+  app.get('/__dev/content', (req, res) => {
+    const fs = require('fs');
+    const out = {};
+    const walk = d => fs.readdirSync(d, { withFileTypes: true }).forEach(e => {
+      const p = path.join(d, e.name);
+      if (e.isDirectory()) walk(p); else if (p.endsWith('.json')) out[path.relative(__dirname, p).replace(/\\/g, '/')] = fs.readFileSync(p, 'utf8');
+    });
+    walk(path.join(__dirname, 'content'));
+    res.json(out);
+  });
+}
 
 let table = null;
 function lookup(url) {
