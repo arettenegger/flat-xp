@@ -28,8 +28,52 @@ kleines PHP-Skript fürs Kontaktformular. Das ist schnell, braucht keine Updates
 | `build.js` | schreibt die komplette Website nach `dist/` |
 | `server.js` | Express-Server für die lokale Entwicklung bzw. Node-Hosting |
 | `deploy/siteground/` | `.htaccess` (Weiterleitungen, HTTPS, Caching) und `kontakt.php` (Formular-Mailer) |
+| `public/admin/` | Verwaltung (News, Seiten, Einstellungen) |
+| `tools/images.js` | WebP-Erzeugung beim Build |
 | `tools/import.js` | einmaliger Import aus der alten WordPress-Seite |
 | `.github/workflows/deploy.yml` | automatischer Build und Deployment |
+
+## Verwaltung (Inhalte pflegen)
+
+Unter **https://flat-xp.at/admin/** gibt es eine Verwaltung für News, Seiten und Einstellungen.
+Sie arbeitet direkt mit GitHub: Jedes „Speichern & veröffentlichen“ ist ein Commit, danach baut
+GitHub die Seite neu und SiteGround übernimmt sie.
+
+**Was geht:**
+- **News:** neu anlegen, bearbeiten, löschen. Mit Titelbild, Bildern und Fotogalerien.
+- **Seiten:** Der Editor zeigt die Seite im echten Design. Du klickst in den Text und schreibst.
+  - Ein Klick auf ein Bild öffnet Ersetzen, Größe, Ausrichtung, Beschreibung und Löschen.
+  - Ein Klick in eine Galerie öffnet Fotos hinzufügen und Spaltenanzahl.
+  - Neue Seite aus Vorlage, z. B. „I-Wurf“ als Kopie vom H-Wurf; wird auf Wunsch gleich ins Würfe-Menü eingetragen.
+  - Titel und Beschreibung für Google sind pro Seite einstellbar.
+- **Einstellungen:** Kontaktdaten, Würfe-Menü (Reihenfolge, „Aktuell keine Würfe geplant“), Galerie-Übersicht.
+- **Bilder:** Hochgeladene Fotos werden schon im Browser auf 1600 px verkleinert.
+
+**Anmeldung – einmalig einen Zugangsschlüssel erstellen:**
+1. github.com → Profilbild → *Settings* → *Developer settings* → *Personal access tokens* → *Fine-grained tokens* → *Generate new token*
+2. Repository access: *Only select repositories* → `flat-xp`
+3. Permissions: **Contents: Read and write**, **Actions: Read-only**
+4. Token kopieren und in der Verwaltung einfügen (Häkchen „angemeldet bleiben“ nur auf eigenen Geräten).
+
+Wer keinen Schlüssel hat, kann nichts ändern – die Verwaltungsseite selbst enthält keine Zugangsdaten.
+Einen verlorenen Schlüssel einfach auf GitHub löschen.
+
+## Bilder & Geschwindigkeit
+
+`npm run build` erzeugt automatisch zu jedem Bild eine verkleinerte **WebP-Version** (max. 1600 px)
+und verwendet diese auf der Website. Die Bilder wurden dadurch um rund 70 % kleiner (45,9 MB → 13,3 MB).
+Die Originale bleiben für alte Links und Social-Media-Vorschauen erhalten.
+Ergebnisse werden in `.cache/img` zwischengespeichert, auch in der GitHub Action.
+
+## SEO
+
+- Jede Seite hat einen sauberen Titel, eine Beschreibung und ein Vorschaubild für Facebook, WhatsApp usw. (Open Graph).
+- Strukturierte Daten (schema.org):
+  - Startseite und Kontakt: Zucht als `LocalBusiness` mit Adresse in Admont.
+  - News: `BlogPosting`.
+  - Alle Seiten: Brotkrumen-Navigation.
+- `sitemap.xml` mit Änderungsdatum, `robots.txt` sperrt `/admin/`.
+- Titel und Beschreibungen lassen sich in der Verwaltung pro Seite ändern.
 
 ## Lokal arbeiten
 

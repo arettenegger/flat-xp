@@ -27,7 +27,15 @@ jobs:
           node-version: 20
           cache: npm
 
-      - run: npm ci --omit=dev
+      - run: npm ci
+
+      # Zwischenspeicher für verkleinerte WebP-Bilder (spart Rechenzeit)
+      - uses: actions/cache@v4
+        with:
+          path: .cache/img
+          key: img-${{ hashFiles('public/uploads/**') }}
+          restore-keys: img-
+
       - run: npm run build
 
       - name: Interne Links prüfen (nur Hinweis)

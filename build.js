@@ -30,13 +30,21 @@ for (const r of all) {
 
 // 3) Sitemap + robots.txt
 const site = JSON.parse(fs.readFileSync(path.join(ROOT, 'content', 'site.json'), 'utf8'));
-const urls = [...seen].filter(u => !u.endsWith('.html') && !u.includes('/danke/'));
+const urls = all.filter((r, i) => all.findIndex(x => x.url === r.url) === i)
+  .filter(r => !r.url.endsWith('.html') && !r.url.includes('/danke/'));
+const lastmod = r => (r.lastmod && !isNaN(new Date(r.lastmod)) ? `<lastmod>${new Date(r.lastmod).toISOString().slice(0, 10)}</lastmod>` : '');
 fs.writeFileSync(path.join(DIST, 'sitemap.xml'),
   '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n' +
-  urls.map(u => `  <url><loc>${site.url}${u}</loc></url>`).join('\n') + '\n</urlset>\n');
+  urls.map(r => `  <url><loc>${site.url}${r.url}</loc>${lastmod(r)}</url>`).join('\n') + '\n</urlset>\n');
 fs.writeFileSync(path.join(DIST, 'robots.txt'), `User-agent: *\nAllow: /\nDisallow: /admin/\n\nSitemap: ${site.url}/sitemap.xml\n`);
 
 // 4) Server-Dateien für SiteGround (Apache/PHP)
 fs.cpSync(path.join(ROOT, 'deploy', 'siteground'), DIST, { recursive: true });
 
 console.log(`Fertig: ${seen.size} Seiten nach dist/ geschrieben.`);
+
+// 5) Bilder verkleinern + WebP (mit --no-images überspringen)
+if (!process.argv.includes('--no-images')) {
+  require('./tools/images').optimize(DIST, path.join(ROOT, '.cache', 'img'))
+    .catch(e => { console.error(e); process.exitCode = 1; });
+}
