@@ -297,13 +297,14 @@
       <body><main class="site-main"><div class="content${opts.narrow ? ' narrow' : ''}" id="ed" contenteditable="true">${toDisplay(html)}</div></main></body></html>`;
 
     let doc, ed, selImg = null;
-    const changed = () => { S.dirty = true; };
+    const changed = () => { S.dirty = true; if (opts.onChange) { clearTimeout(changed.t); changed.t = setTimeout(opts.onChange, 400); } };
 
     frame.addEventListener('load', () => {
       doc = frame.contentDocument;
       ed = doc.getElementById('ed');
       doc.execCommand('defaultParagraphSeparator', false, 'p');
       ed.addEventListener('input', changed);
+      if (opts.onChange) setTimeout(opts.onChange, 50);
       // Lightbox-/Links im Editor nicht öffnen
       ed.addEventListener('click', e => {
         const a = e.target.closest('a'); if (a) e.preventDefault();
@@ -477,6 +478,7 @@
     }
 
     return {
+      peek() { return ed ? ed.innerHTML : html; },
       getHtml() {
         if (!ed) return null;
         if (selImg) selImg.classList.remove('xp-sel');
@@ -500,6 +502,7 @@
     if (name === 'seiten') return pagesList();
     if (name === 'seite') return pageEdit(decodeURIComponent(arg));
     if (name === 'einstellungen') return settings();
+    if (name === 'seo') return seoOverview();
     newsList();
   }
   let lastHash = location.hash;
@@ -564,10 +567,18 @@
           </label>
         </div>
       </div>
+      <div id="seoBox"></div>
       <div id="ed"></div>`;
 
-    const editor = createEditor($('#ed'), p.html, { narrow: true });
-    ['title', 'date'].forEach(id => $('#' + id).addEventListener('input', () => { S.dirty = true; }));
+    const seoState = { seoTitle: p.seoTitle || '', description: p.description || '', keyword: p.keyword || '' };
+    let editor;
+    const seo = XP_SEO.panel($('#seoBox'), {
+      get: () => ({ kind: 'post', title: $('#title').value.trim(), slug: p.slug, date: $('#date').value, html: editor ? editor.peek() : p.html, ...seoState }),
+      set: f => { Object.assign(seoState, f); S.dirty = true; },
+      all: seoItems,
+    });
+    editor = createEditor($('#ed'), p.html, { narrow: true, onChange: () => seo.update() });
+    ['title', 'date'].forEach(id => $('#' + id).addEventListener('input', () => { S.dirty = true; seo.update(); }));
 
     $('#coverPick').onclick = async () => {
       const [f] = await pickFiles(false); if (!f) return;
@@ -589,7 +600,7 @@
       if (!title || !date) return toast('Bitte Überschrift und Datum angeben.', true);
       const { html, files } = fromDisplay(raw);
       const time = existing && existing.data.date.slice(0, 10) === date ? existing.data.date.slice(10) : 'T12:00:00';
-      const data = { ...p, title, date: date + time, image: cover || null, excerpt: '', html, modified: new Date().toISOString().slice(0, 19) };
+      const data = { ...p, ...seoState, title, date: date + time, image: cover || null, excerpt: '', html, modified: new Date().toISOString().slice(0, 19) };
       if (!existing) {
         const [y, m, d] = date.split('-');
         let base = `${d}-${m}-${y}`, s = base, n = 2;
@@ -728,26 +739,27 @@
           <button class="btn primary" id="save">💾 Speichern &amp; veröffentlichen</button>
         </div>
       </div>
-      <details class="card">
-        <summary><b>Titel &amp; Google-Angaben</b></summary>
-        <div class="grid2" style="margin-top:14px">
-          <label>Name der Seite (intern)<input id="title" value="${esc(p.title)}"></label>
-          <label>Titel bei Google / im Browser-Tab<input id="seo" value="${esc(p.seoTitle || '')}"></label>
-        </div>
-        <label>Beschreibung bei Google <span class="hint">(ca. 150 Zeichen)</span><textarea id="desc" rows="2">${esc(p.description || '')}</textarea></label>
-      </details>
+      <div class="card"><label style="margin:0">Name der Seite <span class="hint">(Überschrift in Menü und Übersicht)</span><input id="title" value="${esc(p.title)}"></label></div>
+      <div id="seoBox"></div>
       ${slug === 'home' ? '<p class="hint">Hinweis: Der grau gestrichelte NEWS-Bereich wird automatisch mit den neuesten Beiträgen befüllt.</p>' : ''}
       <div id="ed"></div>`;
     const html = p.html.replace('<!--NEWS-->', '<div class="news-placeholder" contenteditable="false" style="border:2px dashed #aaa;padding:30px;text-align:center;color:#777">📰 Hier erscheinen automatisch die neuesten News</div>');
-    const editor = createEditor($('#ed'), html);
-    ['title', 'seo', 'desc'].forEach(id => $('#' + id).addEventListener('input', () => { S.dirty = true; }));
+    const seoState = { seoTitle: p.seoTitle || '', description: p.description || '', keyword: p.keyword || '' };
+    let editor;
+    const seo = XP_SEO.panel($('#seoBox'), {
+      get: () => ({ kind: 'page', title: $('#title').value.trim() || p.title, slug, html: editor ? editor.peek() : p.html, ...seoState }),
+      set: f => { Object.assign(seoState, f); S.dirty = true; },
+      all: seoItems,
+    });
+    editor = createEditor($('#ed'), html, { onChange: () => seo.update() });
+    $('#title').addEventListener('input', () => { S.dirty = true; seo.update(); });
 
     $('#save').onclick = async () => {
       const raw = editor.getHtml();
       if (raw == null) return;
       let { html: out, files } = fromDisplay(raw);
       out = out.replace(/<div class="news-placeholder"[^>]*>[\s\S]*?<\/div>/, '<!--NEWS-->');
-      const data = { ...p, title: $('#title').value.trim() || p.title, seoTitle: $('#seo').value.trim(), description: $('#desc').value.trim(), html: out, modified: new Date().toISOString().slice(0, 19) };
+      const data = { ...p, ...seoState, title: $('#title').value.trim() || p.title, html: out, modified: new Date().toISOString().slice(0, 19) };
       loading(true, 'Speichere …');
       try {
         await commit([...files, jsonFile(page.path, data)], `Seite geändert: ${data.title}`);
@@ -778,6 +790,49 @@
       } catch (e) { toast('Löschen fehlgeschlagen: ' + e.message, true); }
       finally { loading(false); }
     };
+  }
+
+  /* ---------- SEO ---------- */
+  const seoItems = () => [
+    ...S.pages.map(x => ({ kind: 'page', ...x.data })),
+    ...S.posts.map(x => ({ kind: 'post', ...x.data })),
+  ];
+
+  function seoOverview() {
+    const all = seoItems();
+    const rows = all.map(it => ({ it, r: XP_SEO.analyze(it, all) })).sort((a, b) => a.r.score - b.r.score);
+    const avg = Math.round(rows.reduce((s, x) => s + x.r.score, 0) / (rows.length || 1));
+    const count = g => rows.filter(x => x.r.grade === g).length;
+    view().innerHTML = `
+      <div class="head">
+        <div><h1>SEO-Übersicht</h1><p>Alle Seiten und News mit Bewertung – die schwächsten zuerst. Anklicken zum Verbessern.</p></div>
+      </div>
+      <div class="seo-stats">
+        <div class="card">${XP_SEO.badge({ score: avg, grade: avg >= 80 ? 'good' : avg >= 55 ? 'warn' : 'bad' }, true)}<span>Durchschnitt</span></div>
+        <div class="card"><b class="good">${count('good')}</b><span>gut</span></div>
+        <div class="card"><b class="warn">${count('warn')}</b><span>verbesserbar</span></div>
+        <div class="card"><b class="bad">${count('bad')}</b><span>schwach</span></div>
+      </div>
+      <div class="seo-filter">
+        <select id="sf"><option value="">Seiten und News</option><option value="page">Nur Seiten</option><option value="post">Nur News</option></select>
+        <select id="sg"><option value="">Jede Bewertung</option><option value="bad">schwach</option><option value="warn">verbesserbar</option><option value="good">gut</option></select>
+        <input class="search" type="search" placeholder="Suchen …" id="q">
+      </div>
+      <div class="list" id="list"></div>`;
+    const render = () => {
+      const f = $('#sf').value, g = $('#sg').value, q = $('#q').value.toLowerCase();
+      $('#list').innerHTML = rows
+        .filter(x => (!f || x.it.kind === f) && (!g || x.r.grade === g) && (!q || x.it.title.toLowerCase().includes(q)))
+        .map(x => {
+          const top = x.r.checks.filter(c => c.state !== 'good').slice(0, 2).map(c => esc(c.text)).join(' · ') || 'Alles in Ordnung';
+          const href = x.it.kind === 'post' ? '#news-edit/' + encodeURIComponent(x.it.slug) : '#seite/' + encodeURIComponent(x.it.slug);
+          return `<a class="row seo-row" href="${href}">${XP_SEO.badge(x.r)}
+            <div class="t"><b>${esc(x.it.title)} <span class="tag">${x.it.kind === 'post' ? 'News' : 'Seite'}</span></b>
+            <small>${esc(x.r.eff.title)}</small><small class="issues">${top}</small></div></a>`;
+        }).join('') || '<div class="row">Nichts gefunden.</div>';
+    };
+    ['#sf', '#sg', '#q'].forEach(sel => $(sel).addEventListener('input', render));
+    render();
   }
 
   /* ---------- Einstellungen ---------- */

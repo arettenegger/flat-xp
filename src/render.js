@@ -157,14 +157,14 @@ function routes() {
     const url = `/${p.slug}/`;
     const image = p.image || shareImage(p.html);
     list.push(page(url, 'post', {
-      title: `${p.title} – News | Flat-XP`, description: cutText(p.excerpt || plain(p.html)), post: p,
+      title: p.seoTitle || `${p.title} – News | Flat-XP`, description: p.description || cutText(p.excerpt || plain(p.html)), post: p,
       image, ogType: 'article', lastmod: p.modified || p.date,
       newer: posts[i - 1], older: posts[i + 1],
       jsonld: [{
         '@type': 'BlogPosting', headline: p.title, datePublished: p.date, dateModified: p.modified || p.date,
         mainEntityOfPage: site.url + url, image: abs(site, image || DEFAULT_IMAGE),
         author: { '@type': 'Person', name: site.owner }, publisher: { '@id': site.url + '/#zucht' },
-        description: cutText(p.excerpt || plain(p.html)),
+        description: p.description || cutText(p.excerpt || plain(p.html)),
       }, crumbs(site, [['Home', '/home/'], ['News', '/blog/'], [p.title, url]])],
     }));
   });
