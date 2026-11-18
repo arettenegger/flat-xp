@@ -1,0 +1,51 @@
+{
+  "name": "Flat-XP",
+  "tagline": "Dual Purpose Flat Coated Retriever aus Admont",
+  "url": "https://flat-xp.at",
+  "owner": "Barbara Aumann",
+  "address": "8911 Admont – Mittlere Bachgasse 46",
+  "phone": "+43 (0) 676 365 57 17",
+  "phoneLink": "+436763655717",
+  "email": "info@flat-xp.at",
+  "since": 2017,
+  "menu": [
+    { "title": "Home", "url": "/home/", "icon": "/uploads/2017/06/23-1.png" },
+    { "title": "HÜNDINNEN", "url": "/die-huendinnen/", "icon": "/uploads/2017/06/15-1.png" },
+    { "title": "Deckrüde", "url": "/deckruden/", "icon": "/uploads/2017/06/18-1.png" },
+    {
+      "title": "WÜRFE", "url": "#",
+      "children": [
+        { "title": "Aktuell keine Würfe geplant", "url": "#" },
+        { "title": "H-Wurf", "url": "/h-wurf/" },
+        { "title": "G-Wurf", "url": "/g-wurf/" },
+        { "title": "F-Wurf", "url": "/f-wurf/" },
+        { "title": "E-Wurf", "url": "/e-wurf/" },
+        { "title": "D-Wurf", "url": "/d-wurf/" },
+        { "title": "C-Wurf", "url": "/c-wurf/" },
+        { "title": "B-Wurf", "url": "/b-wurf/" },
+        { "title": "A-Wurf", "url": "/a-wurf/" }
+      ]
+    },
+    { "title": "Galerien", "url": "/galerien/", "icon": "/uploads/2017/06/21-1.png" },
+    { "title": "Unvergessen", "url": "/unvergessen/", "icon": "/uploads/2017/06/20-1.png" },
+    { "title": "Kontakt", "url": "/kontakt/" },
+    { "title": "News", "url": "/blog/" }
+  ],
+  "galleries": [
+    "alpha-orion-aus-unserm-a-wurf",
+    "unser-b-wurf-13-10-2006",
+    "unser-b-wurf-entwickelt-sich-praechtig",
+    "meet-the-parents-2006",
+    "dummytraining-2007",
+    "unser-c-wurf",
+    "die-gelehrigen-c-chens",
+    "unser-d-wurf",
+    "daisy-galerien-darling",
+    "css-2010",
+    "welpentreffen-2010",
+    "welpentreffen-2011",
+    "oktobertreffen-2015",
+    "unsere-hunde"
+  ],
+  "homeNewsCount": 6
+}

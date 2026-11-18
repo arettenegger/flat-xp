@@ -1,0 +1,13 @@
+<div class="content narrow">
+  <article class="single-post">
+    <h1><%= post.title %></h1>
+    <p class="meta"><%= fmtDate(post.date) %></p>
+    <hr class="fx-sep">
+    <div class="post-body"><%- post.html %></div>
+  </article>
+  <nav class="post-nav">
+    <span><% if (older) { %><a href="/<%= older.slug %>/">&larr; <%= older.title %></a><% } %></span>
+    <a href="/blog/">Alle News</a>
+    <span><% if (newer) { %><a href="/<%= newer.slug %>/"><%= newer.title %> &rarr;</a><% } %></span>
+  </nav>
+</div>

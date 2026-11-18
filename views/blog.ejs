@@ -1,0 +1,25 @@
+<section class="hero" style="background-image:url('/uploads/2020/08/KLEIN_Gruppenbild_flat_xp.jpg')">
+  <h1>Unser Nachwuchs</h1>
+</section>
+<div class="content">
+  <div class="post-grid">
+<% posts.forEach(function (p) { %>
+    <article class="post-card">
+<% if (p.image) { %>      <a href="/<%= p.slug %>/" class="post-card-img"><img src="<%= p.image %>" alt="" loading="lazy"></a>
+<% } %>      <div class="post-card-body">
+        <h2><a href="/<%= p.slug %>/"><%= p.title %></a></h2>
+        <p class="meta"><%= fmtDate(p.date) %></p>
+        <p><%= p.excerpt.length > 200 ? p.excerpt.slice(0, 200).replace(/\s+\S*$/, '') + ' […]' : p.excerpt %></p>
+        <a class="more" href="/<%= p.slug %>/">Weiterlesen</a>
+      </div>
+    </article>
+<% }); %>
+  </div>
+<% if (pagesCount > 1) { %>
+  <nav class="pagination" aria-label="Seiten">
+<% for (var i = 1; i <= pagesCount; i++) { %>
+    <a href="<%= i === 1 ? '/blog/' : '/blog/page/' + i + '/' %>"<% if (i === pageNo) { %> class="current" aria-current="page"<% } %>><%= i %></a>
+<% } %>
+  </nav>
+<% } %>
+</div>

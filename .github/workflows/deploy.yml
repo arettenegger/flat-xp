@@ -1,0 +1,58 @@
+# Baut die Website bei jedem Push auf "main" und legt das Ergebnis
+# im Branch "deploy" ab. SiteGround holt sich diesen Branch per git pull.
+name: Build & Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: deploy
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      SG_HOST: ${{ secrets.SG_HOST }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci --omit=dev
+      - run: npm run build
+
+      - name: Interne Links prüfen (nur Hinweis)
+        run: node tools/check-links.js || true
+
+      - name: Build in Branch "deploy" schreiben
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_branch: deploy
+          publish_dir: ./dist
+          force_orphan: true
+          user_name: github-actions[bot]
+          user_email: github-actions[bot]@users.noreply.github.com
+          commit_message: "Build ${{ github.sha }}"
+
+      # Optional: SiteGround sofort aktualisieren (sonst holt der Cronjob es sich).
+      # Dafür im Repo unter Settings → Secrets folgende Werte anlegen:
+      #   SG_HOST, SG_USER, SG_SSH_KEY, SG_PATH  (Port ist bei SiteGround 18765)
+      - name: SiteGround sofort aktualisieren
+        if: ${{ env.SG_HOST != '' }}
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.SG_HOST }}
+          username: ${{ secrets.SG_USER }}
+          key: ${{ secrets.SG_SSH_KEY }}
+          port: 18765
+          script: cd "${{ secrets.SG_PATH }}" && git fetch -q origin deploy && git reset -q --hard origin/deploy

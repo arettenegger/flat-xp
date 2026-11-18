@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="de-AT">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title><%= title %></title>
+  <meta name="description" content="Flat-XP – Dual Purpose Flat Coated Retriever aus Admont, Steiermark. Barbara Aumann, Zucht mit ÖKV-Gütesiegel.">
+  <link rel="canonical" href="<%= site.url %>/">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="intro-page">
+  <header class="site-header">
+    <div class="header-banner">
+      <a class="logo" href="/home/" aria-label="Flat-XP – zur Startseite">
+        <img src="/uploads/2018/06/logo-with-label-star.png" alt="Flat-XP Dual Purpose – Flat Coated Retriever aus Admont" width="390" height="147">
+      </a>
+    </div>
+    <nav class="main-nav" aria-label="Hauptmenü">
+      <ul id="menu">
+<% site.menu.filter(function (i) { return !i.children; }).forEach(function (item) { %>
+        <li><a href="<%= item.url %>"><% if (item.icon) { %><img src="<%= item.icon %>" alt="" width="20" height="20"><% } %><%= item.title %></a></li>
+<% }); %>
+      </ul>
+    </nav>
+  </header>
+
+  <main class="intro">
+    <h1 class="sr-only">Flat-XP – Dual Purpose Flat Coated Retriever aus Admont</h1>
+    <div class="intro-stage" aria-hidden="true">
+      <div class="intro-words">
+        <p class="l1"><span class="green drop-top">FLAT</span> <span class="chars">COATED RETRIEVERS</span></p>
+        <p class="l2"><span class="chars d2">A WONDERFUL</span> <span class="green drop-bottom">XP</span><span class="chars d3">ERIENCE</span></p>
+      </div>
+      <div class="intro-logo">
+        <img src="/uploads/2017/06/logo-big.png" alt="" width="494" height="274">
+        <span class="intro-flatxp">FLAT XP</span>
+      </div>
+    </div>
+    <a class="fx-btn intro-btn" href="/home/">ZUR STARTSEITE</a>
+  </main>
+
+  <footer class="site-footer">
+    <div class="footer-top">
+      <p>@ Copyright FLAT-XP <%= site.owner %> ● <%= site.address %> ● Mobil: <a href="tel:<%= site.phoneLink %>"><%= site.phone %></a> ● Email: <a href="mailto:<%= site.email %>"><%= site.email %></a></p>
+    </div>
+    <div class="footer-bottom">
+      <p>© <%= site.since %>–<%= year %> Dual Purpose | Alle Rechte vorbehalten | <a href="/impressum/">Impressum</a> | <a href="/datenschutz/">Datenschutz</a></p>
+    </div>
+  </footer>
+</body>
+</html>

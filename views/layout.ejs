@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="de-AT">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title><%= title %></title>
+<% if (typeof description !== 'undefined' && description) { %>  <meta name="description" content="<%= description %>">
+<% } %><% if (typeof noindex !== 'undefined' && noindex) { %>  <meta name="robots" content="noindex">
+<% } else { %>  <link rel="canonical" href="<%= site.url %><%= current %>">
+<% } %>  <meta property="og:title" content="<%= title %>">
+  <meta property="og:site_name" content="Flat-XP">
+  <meta property="og:locale" content="de_AT">
+  <link rel="preload" href="/fonts/montserrat-latin-700-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/fonts/pt-sans-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <a class="skip" href="#main">Zum Inhalt springen</a>
+  <header class="site-header">
+    <div class="header-banner">
+      <a class="logo" href="/home/" aria-label="Flat-XP – zur Startseite">
+        <img src="/uploads/2018/06/logo-with-label-star.png" alt="Flat-XP Dual Purpose – Flat Coated Retriever aus Admont" width="390" height="147">
+      </a>
+    </div>
+    <nav class="main-nav" aria-label="Hauptmenü">
+      <button class="nav-toggle" aria-expanded="false" aria-controls="menu">
+        <span></span><span></span><span></span><b>Menü</b>
+      </button>
+      <ul id="menu">
+<% site.menu.forEach(function (item) {
+     var active = item.url === current || (item.children && item.children.some(function (c) { return c.url === current; }))
+       || (item.url === '/galerien/' && site.galleries.indexOf(current.replace(/\//g, '')) > -1)
+       || (item.url === '/blog/' && /^\/blog\//.test(current)); %>
+        <li class="<%= item.children ? 'has-sub' : '' %><%= active ? ' active' : '' %>">
+          <a href="<%= item.url %>"<% if (item.children) { %> aria-haspopup="true"<% } %>>
+            <% if (item.icon) { %><img src="<%= item.icon %>" alt="" width="20" height="20"><% } %><%= item.title %>
+          </a>
+<% if (item.children) { %>
+          <ul class="sub">
+<% item.children.forEach(function (c) { %>
+            <li<% if (c.url === current) { %> class="active"<% } %>><a href="<%= c.url %>"<% if (c.url === '#') { %> class="disabled"<% } %>><%= c.title %></a></li>
+<% }); %>
+          </ul>
+<% } %>
+        </li>
+<% }); %>
+      </ul>
+    </nav>
+  </header>
+
+  <main id="main" class="site-main">
+<%- body %>
+  </main>
+
+  <footer class="site-footer">
+    <div class="footer-top">
+      <p>@ Copyright FLAT-XP <%= site.owner %> ● <%= site.address %> ● Mobil: <a href="tel:<%= site.phoneLink %>"><%= site.phone %></a> ● Email: <a href="mailto:<%= site.email %>"><%= site.email %></a></p>
+    </div>
+    <div class="footer-bottom">
+      <p>© <%= site.since %>–<%= year %> Dual Purpose | Alle Rechte vorbehalten | <a href="/impressum/">Impressum</a> | <a href="/datenschutz/">Datenschutz</a></p>
+    </div>
+  </footer>
+  <a href="#" class="to-top" aria-label="Nach oben">&#8963;</a>
+  <script src="/js/main.js" defer></script>
+</body>
+</html>

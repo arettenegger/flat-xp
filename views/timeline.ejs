@@ -1,0 +1,12 @@
+<div class="timeline">
+<% var lastMonth = ''; posts.forEach(function (p, i) { var m = fmtMonth(p.date); %>
+<% if (m !== lastMonth) { lastMonth = m; %>  <div class="tl-month"><span><%= m %></span></div>
+<% } %>  <article class="tl-item <%= i % 2 ? 'right' : 'left' %>">
+    <a class="tl-card" href="/<%= p.slug %>/">
+      <h3><%= p.title %></h3>
+      <p><%= p.excerpt.length > 220 ? p.excerpt.slice(0, 220).replace(/\s+\S*$/, '') + ' […]' : p.excerpt %></p>
+    </a>
+  </article>
+<% }); %>
+</div>
+<p class="center"><a class="fx-btn" href="/blog/">Alle News</a></p>

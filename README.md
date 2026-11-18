@@ -1,0 +1,136 @@
+# flat-xp.at – Neubau ohne WordPress
+
+Nachbau der bisherigen WordPress-/Avada-Seite **flat-xp.at** als Node.js-Projekt.
+Design, Texte, Bilder und URLs entsprechen dem Original.
+
+**Ablauf:** Code liegt auf GitHub → GitHub baut die fertige Website → SiteGround holt sie sich.
+
+```
+ Änderung pushen ──► GitHub Action: npm run build ──► Branch "deploy" ──► SiteGround: git pull
+   (Branch main)                                      (fertige HTML-Seiten)    (public_html)
+```
+
+Auf SiteGround läuft dadurch **kein Node.js und kein WordPress**: nur fertige HTML-Dateien und ein
+kleines PHP-Skript fürs Kontaktformular. Das ist schnell, braucht keine Updates und bietet kaum Angriffsfläche.
+
+---
+
+## Projektaufbau
+
+| Ordner / Datei | Inhalt |
+|---|---|
+| `content/site.json` | Menü, Kontaktdaten, Liste der Galerien, Anzahl News auf der Startseite |
+| `content/pages/*.json` | alle Seiten (Hündinnen, Deckrüde, Würfe, Galerien, Impressum …) |
+| `content/posts/*.json` | alle News-Beiträge |
+| `views/*.ejs` | Templates (Layout, Startseite/Intro, News, Kontakt …) |
+| `public/` | CSS, JavaScript, Schriften (lokal, DSGVO-konform) und alle Bilder (`public/uploads`) |
+| `src/render.js` | erzeugt aus Inhalt und Templates die Seiten |
+| `build.js` | schreibt die komplette Website nach `dist/` |
+| `server.js` | Express-Server für die lokale Entwicklung bzw. Node-Hosting |
+| `deploy/siteground/` | `.htaccess` (Weiterleitungen, HTTPS, Caching) und `kontakt.php` (Formular-Mailer) |
+| `tools/import.js` | einmaliger Import aus der alten WordPress-Seite |
+| `.github/workflows/deploy.yml` | automatischer Build und Deployment |
+
+## Lokal arbeiten
+
+```bash
+npm install
+npm run dev        # http://localhost:3000, Änderungen an Inhalten sofort sichtbar
+npm run build      # fertige Seite nach dist/
+npm run preview    # dist/ testen auf http://localhost:4000
+```
+
+### Neuen News-Beitrag anlegen
+
+Eine Datei `content/posts/<adresse>.json` anlegen, z. B. `content/posts/24-12-2026.json`:
+
+```json
+{
+  "slug": "24-12-2026",
+  "title": "24.12.2026",
+  "date": "2026-12-24T10:00:00",
+  "image": "/uploads/2026/12/weihnachten.jpg",
+  "excerpt": "",
+  "html": "<p>Frohe Weihnachten an alle Flat-XP-Freunde!</p><p><img src=\"/uploads/2026/12/weihnachten.jpg\" alt=\"\"></p>"
+}
+```
+
+Bild nach `public/uploads/2026/12/` kopieren, committen, pushen – fertig.
+Der Beitrag erscheint automatisch auf der Startseite (Timeline) und unter „News“.
+
+### Seite ändern
+
+Den Text in `content/pages/<seite>.json` (Feld `html`) bearbeiten. Das Menü steht in `content/site.json`.
+
+---
+
+## Einrichtung GitHub
+
+1. Auf GitHub ein neues Repository anlegen (z. B. `flat-xp.at`, privat).
+2. Hier im Projekt:
+   ```bash
+   git remote add origin https://github.com/<BENUTZER>/flat-xp.at.git
+   git push -u origin main
+   ```
+3. Unter **Actions** startet „Build & Deploy“ automatisch. Danach gibt es den Branch **`deploy`**
+   mit der fertigen Website.
+
+## Einrichtung SiteGround (holt sich die Seite von GitHub)
+
+> Funktioniert mit jedem SiteGround-Tarif (StartUp, GrowBig, GoGeek, Cloud). Node.js wird dort nicht gebraucht.
+
+**1. SSH-Schlüssel auf SiteGround anlegen**
+Site Tools → *Entwickler* → *SSH-Schlüssel-Manager* → Schlüssel erzeugen und den **öffentlichen** Schlüssel kopieren.
+
+**2. Schlüssel bei GitHub hinterlegen** (nur nötig, wenn das Repo privat ist)
+GitHub-Repo → *Settings* → *Deploy keys* → *Add deploy key* → öffentlichen Schlüssel einfügen, **ohne** Schreibrecht.
+
+**3. Per SSH auf SiteGround verbinden** (Port 18765) und die Seite holen:
+
+```bash
+cd ~/www/flat-xp.at
+mv public_html public_html_wordpress_alt        # alte WordPress-Seite als Sicherung behalten
+git clone --branch deploy --single-branch git@github.com:<BENUTZER>/flat-xp.at.git public_html
+```
+
+Die Seite ist sofort online.
+
+**4. Automatisch aktualisieren** – einen der beiden Wege wählen:
+
+- **Einfach (Cronjob):** Site Tools → *Entwickler* → *Cron-Jobs*, alle 10 Minuten:
+  ```bash
+  cd ~/www/flat-xp.at/public_html && git fetch -q origin deploy && git reset -q --hard origin/deploy
+  ```
+- **Sofort nach jedem Push:** im GitHub-Repo unter *Settings → Secrets and variables → Actions* anlegen:
+  `SG_HOST` (SSH-Host von SiteGround), `SG_USER` (SSH-Benutzer), `SG_SSH_KEY` (privater Schlüssel eines
+  zweiten SiteGround-SSH-Schlüssels), `SG_PATH` (`/home/<benutzer>/www/flat-xp.at/public_html`).
+  Die GitHub Action aktualisiert SiteGround dann direkt.
+
+**5. Kontaktformular:** läuft über `kontakt.php` (PHP `mail()`), Empfänger `info@flat-xp.at`.
+Damit Mails nicht im Spam landen, in SiteGround die E-Mail-Adresse `website@flat-xp.at` anlegen
+(sie dient als Absender) oder `$FROM` in `deploy/siteground/kontakt.php` anpassen.
+
+**6. Nach dem Umstieg:** WordPress-Datenbank und alten Ordner erst löschen, wenn alles passt.
+Alte Links (`/wp-content/uploads/...`, `/feed/`, `/Purpose/...`) werden per `.htaccess` weitergeleitet.
+
+---
+
+## Alternative: als echte Node.js-App betreiben
+
+Für Hosting mit Node.js (SiteGround Cloud/VPS, Hostinger, Render …):
+
+```bash
+npm ci --omit=dev
+NODE_ENV=production PORT=3000 node server.js
+```
+
+Kontaktformular dann über SMTP: Umgebungsvariablen `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `MAIL_TO`.
+
+## Bekannte Punkte
+
+- **Datenschutzerklärung** wurde 1:1 übernommen und erwähnt noch WordPress, Cookies (Borlabs) usw.
+  Die neue Seite setzt **keine Cookies**, lädt **keine externen Schriften** und braucht **kein Cookie-Banner**.
+  Die Erklärung sollte entsprechend angepasst werden.
+- Einige Bilder/PDFs waren schon auf der alten Seite defekt (404) und fehlen daher auch hier
+  (`npm run build && node tools/check-links.js` listet sie auf).
+- Die Kommentarfunktion der alten News wurde nicht übernommen (es gab keine Kommentare).

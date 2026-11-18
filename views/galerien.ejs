@@ -1,0 +1,13 @@
+<div class="content">
+  <h1 class="page-title">Galerien</h1>
+  <hr class="fx-sep">
+  <div class="gallery-index">
+<% galleries.forEach(function (g) { %>
+    <a class="gallery-card" href="/<%= g.slug %>/">
+      <% if (g.image) { %><img src="<%= g.image %>" alt="" loading="lazy"><% } %>
+      <span><%= g.title %></span>
+      <% if (g.count) { %><small><%= g.count %> Fotos</small><% } %>
+    </a>
+<% }); %>
+  </div>
+</div>
