@@ -7,7 +7,7 @@ service firebase.storage {
       allow read: if true;
       // hochladen nur angemeldete Verwaltungs-Konten, nur Bilder bis 10 MB, nichts überschreiben/löschen
       allow create: if request.auth != null
-        && request.auth.token.email in ['DEINE-ADMIN-ADRESSE@flat-xp.at']
+        && request.auth.token.email in ['admin@flat-xp.at']
         && request.resource.size < 10 * 1024 * 1024
         && request.resource.contentType.matches('image/.*');
     }
