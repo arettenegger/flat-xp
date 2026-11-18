@@ -1,22 +1,54 @@
-<div class="content narrow">
-  <h1 class="page-title">Kontakt</h1>
-  <hr class="fx-sep">
+<div class="content contact-page">
+  <header class="contact-head">
+    <p class="eyebrow">Flat-XP · Admont</p>
+    <h1 class="page-title">Kontakt</h1>
+    <p class="lead">Sie interessieren sich für einen Welpen, unsere Würfe oder unseren Deckrüden?
+      Oder möchten Sie einfach mehr über Flat Coated Retriever erfahren? Wir freuen uns auf Ihre Nachricht.</p>
+  </header>
+
+  <figure class="contact-photo">
+    <img src="/uploads/2020/08/KLEIN_Gruppenbild_flat_xp.jpg" alt="Die Flat Coated Retriever von Flat-XP" width="1200" height="269">
+  </figure>
+
   <div class="contact">
-    <div class="contact-info">
-      <h3>FLAT-XP</h3>
-      <p><strong><%= site.owner %></strong><br><%= site.address %></p>
-      <p>Mobil: <a href="tel:<%= site.phoneLink %>"><%= site.phone %></a><br>
-         E-Mail: <a href="mailto:<%= site.email %>"><%= site.email %></a></p>
-    </div>
+    <aside class="contact-info">
+      <div class="contact-body">
+        <h2>FLAT-XP</h2>
+        <p class="who"><%= site.owner %></p>
+        <ul class="contact-list">
+          <li>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22s7-6.2 7-12a7 7 0 1 0-14 0c0 5.8 7 12 7 12z"/><circle cx="12" cy="10" r="2.5"/></svg>
+            <a href="https://www.google.com/maps/search/?api=1&amp;query=<%= encodeURIComponent(site.address.replace(/\s+[–-]\s+/, ' ')) %>" target="_blank" rel="noopener"><%= site.address %></a>
+          </li>
+          <li>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3h4l2 5-2.5 1.5a11 11 0 0 0 6 6L16 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 5a2 2 0 0 1 2-2z"/></svg>
+            <a href="tel:<%= site.phoneLink %>"><%= site.phone %></a>
+          </li>
+          <li>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>
+            <a href="mailto:<%= site.email %>"><%= site.email %></a>
+          </li>
+        </ul>
+        <div class="contact-actions">
+          <a class="pill" href="tel:<%= site.phoneLink %>">Anrufen</a>
+          <a class="pill ghost" href="mailto:<%= site.email %>">E-Mail schreiben</a>
+        </div>
+      </div>
+    </aside>
+
     <form class="contact-form" method="post" action="/kontakt/senden/">
-      <label>Name *<input name="name" required maxlength="100" autocomplete="name"></label>
-      <label>E-Mail *<input name="email" type="email" required maxlength="150" autocomplete="email"></label>
-      <label>Telefon<input name="telefon" maxlength="50" autocomplete="tel"></label>
-      <label>Betreff<input name="betreff" maxlength="150"></label>
+      <h2>Schreiben Sie uns</h2>
+      <p class="form-note">Felder mit * sind Pflichtfelder.</p>
+      <div class="form-grid">
+        <label>Name *<input name="name" required maxlength="100" autocomplete="name"></label>
+        <label>E-Mail *<input name="email" type="email" required maxlength="150" autocomplete="email"></label>
+        <label>Telefon<input name="telefon" type="tel" maxlength="50" autocomplete="tel"></label>
+        <label>Betreff<input name="betreff" maxlength="150" placeholder="z. B. Welpenanfrage"></label>
+      </div>
       <label>Nachricht *<textarea name="nachricht" rows="7" required maxlength="5000"></textarea></label>
       <label class="hp" aria-hidden="true">Bitte leer lassen<input name="website" tabindex="-1" autocomplete="off"></label>
-      <label class="check"><input type="checkbox" name="dsgvo" required> Ich bin damit einverstanden, dass meine Angaben zur Beantwortung meiner Anfrage verarbeitet werden. Details in der <a href="/datenschutz/">Datenschutzerklärung</a>.</label>
-      <button class="fx-btn" type="submit">Nachricht senden</button>
+      <label class="check"><input type="checkbox" name="dsgvo" required> <span>Ich bin damit einverstanden, dass meine Angaben zur Beantwortung meiner Anfrage verarbeitet werden. Details in der <a href="/datenschutz/">Datenschutzerklärung</a>.</span></label>
+      <button class="fx-btn" type="submit">Nachricht senden <span aria-hidden="true">→</span></button>
     </form>
   </div>
 </div>
