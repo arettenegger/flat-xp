@@ -1,6 +1,9 @@
 /**
- * Node.js/Express-Server – für die lokale Entwicklung (npm run dev)
- * und für Hosting mit Node.js-Unterstützung (z. B. SiteGround Cloud/VPS).
+ * Node.js/Express-Server
+ *  - lokal:     npm run dev   (rendert jede Seite frisch aus content/)
+ *  - SiteGround: npm run build, dann npm start
+ *                → liefert die fertige Seite aus dist/ (mit WebP-Bildern) aus;
+ *                  fehlt dist/, wird wie lokal live gerendert.
  *
  * Kontaktformular-Versand per SMTP, Zugangsdaten über Umgebungsvariablen:
  *   SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, MAIL_TO
@@ -9,25 +12,47 @@ const path = require('path');
 const express = require('express');
 const { routes } = require('./src/render');
 
+const fs = require('fs');
+
 const PORT = process.env.PORT || 3000;
-const DEV = process.env.NODE_ENV !== 'production';
+// Entwicklungsmodus nur ausdrücklich (npm run dev); sonst gilt Produktion
+const DEV = process.argv.includes('--dev') || process.env.NODE_ENV === 'development';
+const DIST = path.join(__dirname, 'dist');
+const STATIC = !DEV && fs.existsSync(path.join(DIST, 'index.html'));
 const app = express();
 
 app.disable('x-powered-by');
-// Verwaltung (/admin/) – arbeitet direkt mit der GitHub-API
-app.get('/admin', (req, res, next) => (req.originalUrl === '/admin' ? res.redirect(301, '/admin/') : next()));
-app.use('/admin', express.static(path.join(__dirname, 'public', 'admin'), { index: 'index.html' }));
-app.use(express.static(path.join(__dirname, 'public'), { maxAge: DEV ? 0 : '30d', index: false }));
-app.use(express.urlencoded({ extended: false, limit: '20kb' }));
+app.set('trust proxy', true);
+app.use((req, res, next) => {
+  res.set({ 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'strict-origin-when-cross-origin', 'X-Frame-Options': 'SAMEORIGIN' });
+  // www.flat-xp.at → flat-xp.at
+  if (/^www\.flat-xp\.at$/i.test(req.hostname)) return res.redirect(301, 'https://flat-xp.at' + req.originalUrl);
+  next();
+});
 
 // Alte WordPress-Pfade
 app.get(/^\/wp-content\/uploads\/(.*)$/, (req, res) => res.redirect(301, '/uploads/' + req.params[0]));
 app.get(/^\/Purpose\/(.*)$/i, (req, res) => res.redirect(301, '/' + req.params[0]));
+app.get(/^\/(feed|comments\/feed)\/?$/, (req, res) => res.redirect(301, '/blog/'));
+app.get(/^\/(author|category|tag)\/.*$/, (req, res) => res.redirect(301, '/blog/'));
+app.get(/^\/galerien\/[^/]+\/?$/, (req, res) => res.redirect(301, '/galerien/'));
+app.all(/^\/(wp-admin|wp-login\.php|xmlrpc\.php|wp-json)/, (req, res) => res.sendStatus(410));
+
+const cache = (res, file) => {
+  if (/\.html$/.test(file)) res.set('Cache-Control', 'no-cache');
+  else if (/\.(webp|jpe?g|png|gif|svg|woff2?)$/i.test(file)) res.set('Cache-Control', 'public, max-age=31536000');
+  else res.set('Cache-Control', 'public, max-age=2592000');
+};
+// Verwaltung (/admin/) – arbeitet direkt mit der GitHub-API
+app.get('/admin', (req, res, next) => (req.originalUrl === '/admin' ? res.redirect(301, '/admin/') : next()));
+app.use('/admin', express.static(path.join(__dirname, 'public', 'admin'), { index: 'index.html' }));
+if (STATIC) app.use(express.static(DIST, { index: 'index.html', dotfiles: 'ignore', setHeaders: cache }));
+app.use(express.static(path.join(__dirname, 'public'), { index: false, setHeaders: DEV ? undefined : cache }));
+app.use(express.urlencoded({ extended: false, limit: '20kb' }));
 
 // Nur lokal: Inhalte als Liste, damit die Verwaltung ohne GitHub getestet werden kann
 if (DEV) {
   app.get('/__dev/content', (req, res) => {
-    const fs = require('fs');
     const out = {};
     const walk = d => fs.readdirSync(d, { withFileTypes: true }).forEach(e => {
       const p = path.join(d, e.name);
@@ -73,6 +98,11 @@ app.post('/kontakt.php', async (req, res) => {
 });
 
 app.get(/.*/, (req, res) => {
+  if (STATIC) {
+    // dist/ hat jede Seite als Ordner/index.html; was hier ankommt, gibt es nicht
+    if (!req.path.endsWith('/') && !/\.\w+$/.test(req.path)) return res.redirect(301, req.path + '/');
+    return res.status(404).sendFile(path.join(DIST, '404.html'));
+  }
   let url = decodeURIComponent(req.path);
   if (!url.endsWith('/') && !/\.\w+$/.test(url)) return res.redirect(301, url + '/');
   const r = lookup(url);
@@ -80,4 +110,4 @@ app.get(/.*/, (req, res) => {
   res.status(404).type('html').send(lookup('/404.html').render());
 });
 
-app.listen(PORT, () => console.log(`Flat-XP läuft auf http://localhost:${PORT}`));
+app.listen(PORT, () => console.log(`Flat-XP läuft auf http://localhost:${PORT}` + (STATIC ? ' (fertige Seite aus dist/)' : DEV ? ' (Entwicklung)' : ' (live gerendert)')));

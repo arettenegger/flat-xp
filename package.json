@@ -4,8 +4,8 @@
   "description": "Website flat-xp.at – Flat Coated Retriever Zucht Flat-XP (Node.js, statischer Build)",
   "main": "server.js",
   "scripts": {
-    "dev": "node --watch server.js",
-    "start": "NODE_ENV=production node server.js",
+    "dev": "node --watch server.js --dev",
+    "start": "node server.js",
     "build": "node build.js",
     "preview": "npx --yes serve dist -l 4000",
     "import": "node tools/import.js",
