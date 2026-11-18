@@ -49,14 +49,19 @@ GitHub die Seite neu und SiteGround übernimmt sie.
 - **Einstellungen:** Kontaktdaten, Würfe-Menü (Reihenfolge, „Aktuell keine Würfe geplant“), Galerie-Übersicht.
 - **Bilder:** Hochgeladene Fotos werden schon im Browser auf 1600 px verkleinert.
 
-**Anmeldung – einmalig einen Zugangsschlüssel erstellen:**
-1. github.com → Profilbild → *Settings* → *Developer settings* → *Personal access tokens* → *Fine-grained tokens* → *Generate new token*
-2. Repository access: *Only select repositories* → `flat-xp`
-3. Permissions: **Contents: Read and write**, **Actions: Read-only**
-4. Token kopieren und in der Verwaltung einfügen (Häkchen „angemeldet bleiben“ nur auf eigenen Geräten).
+**Anmeldung:** mit E-Mail und Passwort über **Firebase Authentication**.
+Der GitHub-Schlüssel liegt nur auf dem Server (SiteGround-Umgebungsvariable), nie im Browser.
+Neu hochgeladene Bilder landen in **Firebase Storage** (`uploads/JJJJ/MM/…`) und werden von dort angezeigt.
 
-Wer keinen Schlüssel hat, kann nichts ändern – die Verwaltungsseite selbst enthält keine Zugangsdaten.
-Einen verlorenen Schlüssel einfach auf GitHub löschen.
+Einrichtung (einmalig):
+1. **Firebase-Konsole** → Projekt → *Authentication* → Anbieter **E-Mail/Passwort** aktivieren,
+   Benutzer anlegen, unter *Einstellungen → Nutzeraktionen* die **Selbstregistrierung deaktivieren**.
+2. *Storage* anlegen (Region z. B. `europe-west3`), unter *Regeln* den Inhalt von `firebase/storage.rules` einfügen
+   und die Admin-E-Mail eintragen.
+3. *Projekteinstellungen → Meine Apps → Web-App* → die Werte in `public/admin/firebase-config.js` eintragen.
+4. GitHub: Fine-grained Token nur für `flat-xp` (**Contents: Read and write**, **Actions: Read-only**).
+5. SiteGround → Node.js → Umgebungsvariablen: `GITHUB_TOKEN`, `FIREBASE_PROJECT_ID`,
+   `ADMIN_EMAILS` (Komma-getrennt, nur diese Konten dürfen ändern).
 
 ## Bilder & Geschwindigkeit
 

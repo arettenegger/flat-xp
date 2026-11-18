@@ -25,7 +25,7 @@ function loadContent() {
   // Beiträge ohne Auszug: Text aus dem Inhalt nehmen
   for (const p of posts) {
     // Titelbild nur verwenden, wenn die Datei existiert
-    if (p.image && !fs.existsSync(path.join(ROOT, 'public', decodeURIComponent(p.image)))) p.image = null;
+    if (p.image && p.image.startsWith('/') && !fs.existsSync(path.join(ROOT, 'public', decodeURIComponent(p.image)))) p.image = null;
     if (!p.excerpt) {
       p.excerpt = p.html.replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&')
         .replace(/\s+/g, ' ').trim().slice(0, 300);
@@ -56,10 +56,12 @@ function firstImage(html) {
 
 /* ---------- SEO-Helfer ---------- */
 const cutText = (s, n = 158) => (s.length <= n ? s : s.slice(0, n).replace(/[\s,;:–-]+\S*$/, '') + ' …');
+const abs = (site, u) => (/^https?:\/\//.test(u) ? u : site.url + u);
 const plain = html => (html || '').replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/\s+/g, ' ').trim();
 
 // erstes "echtes" Foto (keine Icons/Logos) für Vorschaubilder
 function shareImage(html) {
+  const fb = (html || '').match(/<img[^>]+src="(https:\/\/firebasestorage\.googleapis\.com\/[^"]+)"/);
   for (const m of (html || '').matchAll(/<img[^>]+src="(\/uploads\/[^"]+)"[^>]*>/g)) {
     const w = (m[0].match(/width="(\d+)"/) || [])[1];
     if (/icon|logo|\/2017\/06\/\d+-1\.png/i.test(m[1]) || (w && +w < 150)) continue;
@@ -68,7 +70,7 @@ function shareImage(html) {
     if (full !== m[1] && exists(full)) return full;
     if (exists(m[1])) return m[1];
   }
-  return null;
+  return fb ? fb[1].replace(/&amp;/g, '&') : null;
 }
 
 function business(site) {
@@ -106,7 +108,7 @@ function routes() {
     lastmod: data.lastmod,
     render: () => {
       const seo = {
-        ogImage: site.url + (data.image || DEFAULT_IMAGE),
+        ogImage: abs(site, data.image || DEFAULT_IMAGE),
         ogType: data.ogType || 'website',
         jsonld: data.jsonld ? JSON.stringify({ '@context': 'https://schema.org', '@graph': [].concat(data.jsonld) }).replace(/</g, '\\u003c') : null,
       };
@@ -160,7 +162,7 @@ function routes() {
       newer: posts[i - 1], older: posts[i + 1],
       jsonld: [{
         '@type': 'BlogPosting', headline: p.title, datePublished: p.date, dateModified: p.modified || p.date,
-        mainEntityOfPage: site.url + url, image: site.url + (image || DEFAULT_IMAGE),
+        mainEntityOfPage: site.url + url, image: abs(site, image || DEFAULT_IMAGE),
         author: { '@type': 'Person', name: site.owner }, publisher: { '@id': site.url + '/#zucht' },
         description: cutText(p.excerpt || plain(p.html)),
       }, crumbs(site, [['Home', '/home/'], ['News', '/blog/'], [p.title, url]])],

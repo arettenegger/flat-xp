@@ -1,19 +1,19 @@
 /* =========================================================
    Flat-XP Verwaltung
-   Liest und schreibt die Inhalte direkt im GitHub-Repository.
-   Jede gespeicherte Änderung ist ein Commit → GitHub baut die
-   Website neu → SiteGround holt sie sich.
+   Anmeldung über Firebase (E-Mail/Passwort). Inhalte liest und
+   schreibt der Server (/admin/api/github) im GitHub-Repository –
+   der GitHub-Schlüssel liegt nur auf dem Server. Bilder landen in
+   Firebase Storage. Jede Änderung ist ein Commit → neue Website.
    ========================================================= */
 (function () {
   'use strict';
 
   const REPO = 'arettenegger/flat-xp';
   const BRANCH = 'main';
-  const API = 'https://api.github.com';
+  const API = '/admin/api/github';
   const MONTHS = ['Jänner', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'];
 
   const S = {
-    token: null,
     site: null, siteSha: null,
     pages: [],   // { path, data }
     posts: [],   // { path, data }
@@ -64,8 +64,7 @@
       ...opts,
       headers: {
         Accept: 'application/vnd.github+json',
-        Authorization: 'Bearer ' + S.token,
-        'X-GitHub-Api-Version': '2022-11-28',
+        Authorization: 'Bearer ' + await window.XP_FB.token(),
         ...(opts.body ? { 'Content-Type': 'application/json' } : {}),
       },
     });
@@ -179,13 +178,20 @@
     const ctx = c.getContext('2d'); ctx.imageSmoothingQuality = 'high';
     ctx.drawImage(bmp, sx, sy, sw, sh, 0, 0, w, h);
     const blob = await new Promise(r => c.toBlob(r, 'image/jpeg', 0.85));
-    const b64 = bytesToB64(new Uint8Array(await blob.arrayBuffer()));
     const d = new Date();
     const base = slugify(file.name.replace(/\.[^.]+$/, ''));
-    const web = `/uploads/${d.getFullYear()}/${pad(d.getMonth() + 1)}/${base}-${Date.now().toString(36)}${suffix}.jpg`;
-    const url = URL.createObjectURL(blob);
-    S.uploads.set(web, { path: 'public' + web, b64, url, saved: false });
-    return { web, url, w, h };
+    // direkt in Firebase Storage hochladen; die Adresse ist sofort öffentlich gültig
+    const path = `uploads/${d.getFullYear()}/${pad(d.getMonth() + 1)}/${base}-${Date.now().toString(36)}${suffix}.jpg`;
+    const prev = $('#loadingText').textContent;
+    $('#loadingText').textContent = 'Lade Bild hoch …';
+    const was = $('#loading').hidden; $('#loading').hidden = false;
+    try {
+      const web = await window.XP_FB.upload(path, blob);
+      return { web, url: web, w, h };
+    } catch (e) {
+      toast('Bild-Upload fehlgeschlagen: ' + e.message, true);
+      throw e;
+    } finally { $('#loading').hidden = was; $('#loadingText').textContent = prev; }
   }
 
   function pickFiles(multiple) {
@@ -868,7 +874,7 @@
       await loadAll();
     } catch (e) {
       loading(false);
-      if (e.status === 401 || e.status === 403 || e.status === 404) return showLogin('Der Schlüssel ist ungültig, abgelaufen oder hat keinen Zugriff auf das Repository.');
+      if (e.status === 401 || e.status === 403) return showLogin(e.message || 'Kein Zugriff.');
       return showLogin('Fehler beim Laden: ' + e.message);
     }
     $('#app').hidden = false;
@@ -877,28 +883,48 @@
   }
 
   function showLogin(err) {
-    sessionStorage.removeItem('xp_token');
-    try { localStorage.removeItem('xp_token'); } catch (e) { /* egal */ }
-    S.token = null;
     $('#app').hidden = true;
     $('#login').hidden = false;
     $('#loginErr').textContent = err || '';
     loading(false);
   }
 
-  $('#loginForm').addEventListener('submit', e => {
-    e.preventDefault();
-    S.token = $('#token').value.trim();
-    try {
-      if ($('#remember').checked) localStorage.setItem('xp_token', S.token);
-      else sessionStorage.setItem('xp_token', S.token);
-    } catch (err) { /* Speicher nicht verfügbar – dann nur für diese Sitzung */ }
-    $('#token').value = '';
-    start();
-  });
-  $('#logout').addEventListener('click', () => { if (confirmLeave()) showLogin(); });
+  const FB_ERR = {
+    'auth/invalid-credential': 'E-Mail oder Passwort falsch.',
+    'auth/invalid-email': 'Die E-Mail-Adresse ist ungültig.',
+    'auth/user-disabled': 'Dieses Konto ist gesperrt.',
+    'auth/too-many-requests': 'Zu viele Versuche – bitte später erneut probieren.',
+    'auth/network-request-failed': 'Keine Verbindung zu Firebase.',
+  };
 
-  let saved = null;
-  try { saved = sessionStorage.getItem('xp_token') || localStorage.getItem('xp_token'); } catch (e) { /* egal */ }
-  if (saved) { S.token = saved; start(); } else showLogin();
+  function init() {
+    if (!window.XP_FB.ready) return showLogin('Firebase ist noch nicht eingerichtet (public/admin/firebase-config.js).');
+    let started = false;
+    window.XP_FB.onUser(u => {
+      if (u && !started) { started = true; start(); }
+      else if (!u) { started = false; showLogin(); }
+    });
+  }
+
+  $('#loginForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    $('#loginErr').textContent = '';
+    loading(true, 'Melde an …');
+    try {
+      await window.XP_FB.login($('#email').value.trim(), $('#password').value, $('#remember').checked);
+      $('#password').value = '';
+    } catch (err) {
+      loading(false);
+      $('#loginErr').textContent = FB_ERR[err.code] || 'Anmeldung fehlgeschlagen: ' + err.message;
+    }
+  });
+  $('#forgot').addEventListener('click', async () => {
+    const email = $('#email').value.trim();
+    if (!email) { $('#loginErr').textContent = 'Bitte zuerst die E-Mail-Adresse eingeben.'; return; }
+    try { await window.XP_FB.resetPassword(email); $('#loginErr').textContent = 'Falls das Konto existiert, wurde eine E-Mail zum Zurücksetzen verschickt.'; }
+    catch (err) { $('#loginErr').textContent = FB_ERR[err.code] || err.message; }
+  });
+  $('#logout').addEventListener('click', () => { if (confirmLeave()) window.XP_FB.logout(); });
+
+  if (window.XP_FB) init(); else window.addEventListener('xp-fb-ready', init, { once: true });
 })();

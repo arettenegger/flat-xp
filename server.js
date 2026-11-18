@@ -43,7 +43,49 @@ const cache = (res, file) => {
   else if (/\.(webp|jpe?g|png|gif|svg|woff2?)$/i.test(file)) res.set('Cache-Control', 'public, max-age=31536000');
   else res.set('Cache-Control', 'public, max-age=2592000');
 };
-// Verwaltung (/admin/) – arbeitet direkt mit der GitHub-API
+/* ---------- Verwaltung: Firebase-Anmeldung prüfen, dann GitHub-Zugriff weiterreichen ----------
+   Umgebungsvariablen: FIREBASE_PROJECT_ID, ADMIN_EMAILS (Komma-Liste), GITHUB_TOKEN
+   (Fine-grained Token nur für das Repo: Contents read/write, Actions read). */
+const REPO = process.env.GITHUB_REPO || 'arettenegger/flat-xp';
+const ADMINS = (process.env.ADMIN_EMAILS || '').toLowerCase().split(',').map(s => s.trim()).filter(Boolean);
+let joseLib, jwks;
+async function verifyFirebase(idToken) {
+  const pid = process.env.FIREBASE_PROJECT_ID;
+  if (!pid) throw Object.assign(new Error('FIREBASE_PROJECT_ID ist am Server nicht gesetzt.'), { status: 500 });
+  joseLib = joseLib || await import('jose');
+  jwks = jwks || joseLib.createRemoteJWKSet(new URL('https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com'));
+  const { payload } = await joseLib.jwtVerify(idToken, jwks, { issuer: 'https://securetoken.google.com/' + pid, audience: pid });
+  return payload;
+}
+app.use('/admin/api/github', express.json({ limit: '25mb' }), async (req, res) => {
+  try {
+    if (!process.env.GITHUB_TOKEN) return res.status(500).json({ message: 'GITHUB_TOKEN ist am Server nicht gesetzt.' });
+    if (!ADMINS.length) return res.status(403).json({ message: 'ADMIN_EMAILS ist am Server nicht gesetzt – niemand darf ändern.' });
+    const m = /^Bearer (.+)$/.exec(req.get('authorization') || '');
+    let user;
+    try { user = await verifyFirebase(m && m[1]); } catch (e) {
+      return res.status(e.status || 401).json({ message: e.status ? e.message : 'Anmeldung abgelaufen – bitte neu anmelden.' });
+    }
+    if (!ADMINS.includes(String(user.email).toLowerCase())) return res.status(403).json({ message: `Das Konto ${user.email} hat keinen Zugriff auf die Verwaltung.` });
+    // nur dieses Repository, nur die benötigten Methoden
+    if (!req.url.startsWith(`/repos/${REPO}/`) || !['GET', 'POST', 'PATCH'].includes(req.method)) return res.status(403).json({ message: 'Nicht erlaubt.' });
+    const r = await fetch('https://api.github.com' + req.url, {
+      method: req.method,
+      headers: {
+        Accept: 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28',
+        Authorization: 'Bearer ' + process.env.GITHUB_TOKEN, 'User-Agent': 'flat-xp-admin',
+        ...(req.method !== 'GET' ? { 'Content-Type': 'application/json' } : {}),
+      },
+      body: req.method !== 'GET' ? JSON.stringify(req.body) : undefined,
+    });
+    res.status(r.status).set('Cache-Control', 'no-store').type(r.headers.get('content-type') || 'application/json').send(Buffer.from(await r.arrayBuffer()));
+  } catch (e) {
+    console.error(e);
+    res.status(502).json({ message: 'GitHub nicht erreichbar.' });
+  }
+});
+
+// Verwaltung (/admin/)
 app.get('/admin', (req, res, next) => (req.originalUrl === '/admin' ? res.redirect(301, '/admin/') : next()));
 app.use('/admin', express.static(path.join(__dirname, 'public', 'admin'), { index: 'index.html' }));
 if (STATIC) app.use(express.static(DIST, { index: 'index.html', dotfiles: 'ignore', setHeaders: cache }));

@@ -1,0 +1,15 @@
+rules_version = '2';
+// Firebase-Konsole → Storage → Regeln: diesen Text einfügen und die E-Mail-Adresse(n) anpassen.
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /uploads/{allPaths=**} {
+      // Bilder sind öffentlich sichtbar (sie stehen auf der Website)
+      allow read: if true;
+      // hochladen nur angemeldete Verwaltungs-Konten, nur Bilder bis 10 MB, nichts überschreiben/löschen
+      allow create: if request.auth != null
+        && request.auth.token.email in ['DEINE-ADMIN-ADRESSE@flat-xp.at']
+        && request.resource.size < 10 * 1024 * 1024
+        && request.resource.contentType.matches('image/.*');
+    }
+  }
+}

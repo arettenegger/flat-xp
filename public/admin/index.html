@@ -13,23 +13,17 @@
     <form class="login-box" id="loginForm">
       <img src="/uploads/2018/06/logo-with-label-star.png" alt="Flat-XP" width="260">
       <h1>Verwaltung</h1>
-      <p>Bitte mit dem GitHub-Zugangsschlüssel anmelden.</p>
-      <label>Zugangsschlüssel (Token)
-        <input type="password" id="token" autocomplete="current-password" required placeholder="github_pat_…">
+      <p>Bitte mit E-Mail und Passwort anmelden.</p>
+      <label>E-Mail
+        <input type="email" id="email" autocomplete="username" required>
+      </label>
+      <label>Passwort
+        <input type="password" id="password" autocomplete="current-password" required>
       </label>
       <label class="check"><input type="checkbox" id="remember"> Auf diesem Gerät angemeldet bleiben</label>
       <button class="btn primary" type="submit">Anmelden</button>
       <p class="err" id="loginErr"></p>
-      <details>
-        <summary>Wie bekomme ich einen Schlüssel?</summary>
-        <ol>
-          <li>Auf github.com anmelden → Profilbild → <b>Settings</b> → <b>Developer settings</b> → <b>Personal access tokens</b> → <b>Fine-grained tokens</b> → <b>Generate new token</b>.</li>
-          <li>Name z. B. „Flat-XP Verwaltung“, Ablaufdatum wählen.</li>
-          <li>Repository access: <b>Only select repositories</b> → <code>flat-xp</code>.</li>
-          <li>Permissions → Repository: <b>Contents: Read and write</b>, <b>Actions: Read-only</b>.</li>
-          <li>Token erzeugen, kopieren und hier einfügen.</li>
-        </ol>
-      </details>
+      <button type="button" class="link" id="forgot">Passwort vergessen?</button>
     </form>
   </section>
 
@@ -54,6 +48,7 @@
   <div id="loading" class="loading"><div class="spinner"></div><p id="loadingText">Lade …</p></div>
   <div id="toast" class="toast" hidden></div>
 
-  <script src="/admin/admin.js"></script>
+  <script type="module" src="/admin/firebase.js"></script>
+  <script src="/admin/admin.js" defer></script>
 </body>
 </html>
